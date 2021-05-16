@@ -2,7 +2,6 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\Token;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
@@ -17,7 +16,6 @@ class UserFixture extends Fixture
         $this->encoder = $encoder;
     }
 
-
     public function load(ObjectManager $manager)
     {
         $user = new User();
@@ -25,7 +23,13 @@ class UserFixture extends Fixture
         $user->setPassword($this->encoder->encodePassword($user, 'maxsecure'));
 
         $manager->persist($user);
-         
+        $manager->flush();
+
+        $user = new User();
+        $user->setUsername('chuck');
+        $user->setPassword($this->encoder->encodePassword($user, 'maxsecure'));
+
+        $manager->persist($user);
         $manager->flush();
     }
 }

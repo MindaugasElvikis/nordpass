@@ -2,10 +2,10 @@
 
 namespace App\Entity;
 
+use App\Repository\ItemRepository;
 use DateTime;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
-use App\Repository\ItemRepository;
 
 /**
  * @ORM\Entity(repositoryClass=ItemRepository::class)
@@ -40,6 +40,12 @@ class Item
      * @ORM\JoinColumn(nullable=false)
      */
     private $user;
+
+    public function __construct(User $user, string $data)
+    {
+        $this->user = $user;
+        $this->data = $data;
+    }
 
     public function getId(): ?int
     {
