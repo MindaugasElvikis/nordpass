@@ -53,6 +53,31 @@ class ItemController extends AbstractController
     }
 
     /**
+     * @Route("/item", name="item_update", methods={"PUT"})
+     * @IsGranted("ROLE_USER")
+     */
+    public function update(Request $request, ItemService $itemService): JsonResponse
+    {
+        $id = $request->request->getInt('id');
+        if (empty($id)) {
+            return $this->json(['error' => 'No id parameter'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $data = $request->get('data');
+        if (empty($data)) {
+            return $this->json(['error' => 'No data parameter']);
+        }
+
+        try {
+            $itemService->update($this->getUser(), $id, $data);
+        } catch (ItemNotFoundException $exception) {
+            return $this->json(['error' => 'No item'], Response::HTTP_BAD_REQUEST);
+        }
+
+        return $this->json([]);
+    }
+
+    /**
      * @Route("/item/{id}", name="items_delete", methods={"DELETE"})
      * @IsGranted("ROLE_USER")
      */

@@ -117,4 +117,64 @@ class ItemControllerTest extends WebTestCase
         self::assertStringContainsString('No item', $client->getResponse()->getContent());
         self::assertNotNull($itemRepository->find($itemId));
     }
+
+    public function testUpdate(): void
+    {
+        $client = static::createClient();
+
+        /** @var EntityManagerInterface $em */
+        $em = static::$container->get(EntityManagerInterface::class);
+        /** @var UserRepository $userRepository */
+        $userRepository = static::$container->get(UserRepository::class);
+        /** @var ItemRepository $itemRepository */
+        $itemRepository = static::$container->get(ItemRepository::class);
+
+        $user = $userRepository->findOneByUsername('john');
+
+        $client->loginUser($user);
+
+        $item = new Item($user, 'very secure new item data');
+        $em->persist($item);
+        $em->flush();
+
+        $itemId = $item->getId();
+        $newData = 'very secure updated item data';
+        $client->request('PUT', '/item', ['id' => $itemId, 'data' => $newData]);
+        $client->request('GET', '/item');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString($newData, $client->getResponse()->getContent());
+
+        $item = $itemRepository->find($itemId);
+        self::assertEquals($newData, $item->getData());
+    }
+
+    public function testICantUpdateOtherUserItem(): void
+    {
+        $client = static::createClient();
+
+        /** @var EntityManagerInterface $em */
+        $em = static::$container->get(EntityManagerInterface::class);
+        /** @var UserRepository $userRepository */
+        $userRepository = static::$container->get(UserRepository::class);
+        /** @var ItemRepository $itemRepository */
+        $itemRepository = static::$container->get(ItemRepository::class);
+
+        $user = $userRepository->findOneByUsername('john');
+
+        $client->loginUser($user);
+
+        $item = new Item($userRepository->findOneByUsername('chuck'), 'very secure new item data');
+        $em->persist($item);
+        $em->flush();
+
+        $itemId = $item->getId();
+        $client->request('PUT', '/item', ['id' => $itemId, 'data' => 'very secure updated item data']);
+
+        self::assertEquals(Response::HTTP_BAD_REQUEST, $client->getResponse()->getStatusCode());
+        self::assertStringContainsString('No item', $client->getResponse()->getContent());
+        $chuckItem = $itemRepository->find($itemId);
+        self::assertNotNull($chuckItem);
+        self::assertEquals('very secure new item data', $chuckItem->getData());
+    }
 }

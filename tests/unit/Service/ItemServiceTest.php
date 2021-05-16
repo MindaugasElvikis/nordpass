@@ -44,6 +44,37 @@ class ItemServiceTest extends TestCase
         $this->itemService->create($user, $data);
     }
 
+    public function testUpdate(): void
+    {
+        /** @var User */
+        $user = $this->createMock(User::class);
+        $data = 'secret data';
+
+        $expectedObject = new Item($user, $data);
+
+        $this->itemRepository->expects(self::once())
+            ->method('findByIdAndUser')
+            ->with(1, $user)
+            ->willReturn($expectedObject);
+        $this->itemRepository->expects(self::once())->method('save')->with($expectedObject);
+
+        $this->itemService->update($user, 1, 'secret updated data');
+        self::assertEquals('secret updated data', $expectedObject->getData());
+    }
+
+    public function testUpdateNonExistingItem(): void
+    {
+        $this->expectException(ItemNotFoundException::class);
+
+        /** @var User */
+        $user = $this->createMock(User::class);
+
+        $this->itemRepository->expects(self::once())->method('findByIdAndUser')->with(1, $user)->willReturn(null);
+        $this->itemRepository->expects(self::never())->method('save');
+
+        $this->itemService->update($user, 1, 'secret updated data');
+    }
+
     public function testDelete(): void
     {
         /** @var User */
@@ -52,8 +83,11 @@ class ItemServiceTest extends TestCase
 
         $expectedObject = new Item($user, $data);
 
-        $this->itemRepository->expects(self::once())->method('findByIdAndUser')->with(1,
-            $user)->willReturn($expectedObject);
+        $this->itemRepository
+            ->expects(self::once())
+            ->method('findByIdAndUser')
+            ->with(1, $user)
+            ->willReturn($expectedObject);
         $this->itemRepository->expects(self::once())->method('delete')->with($expectedObject);
 
         $this->itemService->delete($user, 1);
