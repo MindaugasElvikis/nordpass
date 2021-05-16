@@ -4,17 +4,19 @@ namespace App\Tests\Unit;
 
 use App\Entity\Item;
 use App\Entity\User;
+use App\Exception\ItemNotFoundException;
+use App\Repository\ItemRepository;
 use App\Service\ItemService;
-use PHPUnit\Framework\TestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 class ItemServiceTest extends TestCase
 {
     /**
      * @var EntityManagerInterface|MockObject
      */
-    private $entityManager;
+    private $itemRepository;
 
     /**
      * @var ItemService
@@ -23,10 +25,10 @@ class ItemServiceTest extends TestCase
 
     public function setUp(): void
     {
-        /** @var EntityManagerInterface */
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
-        
-        $this->itemService = new ItemService($this->entityManager);
+        /** @var ItemRepository */
+        $this->itemRepository = $this->createMock(ItemRepository::class);
+
+        $this->itemService = new ItemService($this->itemRepository);
     }
 
     public function testCreate(): void
@@ -35,11 +37,38 @@ class ItemServiceTest extends TestCase
         $user = $this->createMock(User::class);
         $data = 'secret data';
 
-        $expectedObject = new Item();
-        $expectedObject->setUser($user);
+        $expectedObject = new Item($user, $data);
 
-        $this->entityManager->expects($this->once())->method('persist')->with($expectedObject);
+        $this->itemRepository->expects(self::once())->method('save')->with($expectedObject);
 
         $this->itemService->create($user, $data);
+    }
+
+    public function testDelete(): void
+    {
+        /** @var User */
+        $user = $this->createMock(User::class);
+        $data = 'secret data';
+
+        $expectedObject = new Item($user, $data);
+
+        $this->itemRepository->expects(self::once())->method('findByIdAndUser')->with(1,
+            $user)->willReturn($expectedObject);
+        $this->itemRepository->expects(self::once())->method('delete')->with($expectedObject);
+
+        $this->itemService->delete($user, 1);
+    }
+
+    public function testDeleteNonExistingItem(): void
+    {
+        $this->expectException(ItemNotFoundException::class);
+
+        /** @var User */
+        $user = $this->createMock(User::class);
+
+        $this->itemRepository->expects(self::once())->method('findByIdAndUser')->with(1, $user)->willReturn(null);
+        $this->itemRepository->expects(self::never())->method('delete');
+
+        $this->itemService->delete($user, 1);
     }
 }
