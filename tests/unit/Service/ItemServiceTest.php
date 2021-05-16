@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Exception\ItemNotFoundException;
 use App\Repository\ItemRepository;
 use App\Service\ItemService;
+use App\Service\NullEncryptionService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -28,7 +29,7 @@ class ItemServiceTest extends TestCase
         /** @var ItemRepository */
         $this->itemRepository = $this->createMock(ItemRepository::class);
 
-        $this->itemService = new ItemService($this->itemRepository);
+        $this->itemService = new ItemService($this->itemRepository, new NullEncryptionService());
     }
 
     public function testCreate(): void
@@ -37,7 +38,7 @@ class ItemServiceTest extends TestCase
         $user = $this->createMock(User::class);
         $data = 'secret data';
 
-        $expectedObject = new Item($user, $data);
+        $expectedObject = new Item($user, $data, 'null_encryption_service');
 
         $this->itemRepository->expects(self::once())->method('save')->with($expectedObject);
 
@@ -50,7 +51,7 @@ class ItemServiceTest extends TestCase
         $user = $this->createMock(User::class);
         $data = 'secret data';
 
-        $expectedObject = new Item($user, $data);
+        $expectedObject = new Item($user, $data, null);
 
         $this->itemRepository->expects(self::once())
             ->method('findByIdAndUser')
@@ -81,7 +82,7 @@ class ItemServiceTest extends TestCase
         $user = $this->createMock(User::class);
         $data = 'secret data';
 
-        $expectedObject = new Item($user, $data);
+        $expectedObject = new Item($user, $data, null);
 
         $this->itemRepository
             ->expects(self::once())

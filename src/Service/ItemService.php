@@ -14,9 +14,15 @@ class ItemService
      */
     private $itemRepository;
 
-    public function __construct(ItemRepository $itemRepository)
+    /**
+     * @var EncryptionServiceInterface
+     */
+    private $encryptionService;
+
+    public function __construct(ItemRepository $itemRepository, EncryptionServiceInterface $encryptionService)
     {
         $this->itemRepository = $itemRepository;
+        $this->encryptionService = $encryptionService;
     }
 
     /**
@@ -29,7 +35,7 @@ class ItemService
 
     public function create(User $user, string $data): void
     {
-        $item = new Item($user, $data);
+        $item = new Item($user, $this->encryptionService->encrypt($data), $this->encryptionService->getServiceName());
         $this->itemRepository->save($item);
     }
 
@@ -44,7 +50,8 @@ class ItemService
             throw new ItemNotFoundException();
         }
 
-        $item->setData($data);
+        $item->setData($this->encryptionService->encrypt($data));
+        $item->setEncryptionServiceName($this->encryptionService->getServiceName());
         $this->itemRepository->save($item);
     }
 

@@ -26,6 +26,11 @@ class Item
     private $data;
 
     /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $encryptionServiceName;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -41,10 +46,11 @@ class Item
      */
     private $user;
 
-    public function __construct(User $user, string $data)
+    public function __construct(User $user, string $data, ?string $encryptionServiceName)
     {
         $this->user = $user;
         $this->data = $data;
+        $this->encryptionServiceName = $encryptionServiceName;
     }
 
     public function getId(): ?int
@@ -60,6 +66,18 @@ class Item
     public function setData(string $data): self
     {
         $this->data = $data;
+
+        return $this;
+    }
+
+    public function getEncryptionServiceName(): ?string
+    {
+        return $this->encryptionServiceName;
+    }
+
+    public function setEncryptionServiceName(?string $encryptionServiceName): self
+    {
+        $this->encryptionServiceName = $encryptionServiceName;
 
         return $this;
     }

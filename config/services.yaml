@@ -25,3 +25,22 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    App\Service\ItemService:
+        arguments:
+            - '@App\Repository\ItemRepository'
+            - '@App\Service\OpenSslEncryptionService'
+
+    App\Service\OpenSslEncryptionService:
+        arguments:
+            - '%env(string:ENCRYPTION_PASSPHRASE)%'
+            - '%env(string:ENCRYPTION_IV)%'
+
+    App\Service\EncryptionServiceFactory:
+        arguments:
+            - ['@App\Service\OpenSslEncryptionService', '@App\Service\NullEncryptionService']
+            - '@App\Service\NullEncryptionService'
+
+    App\Command\UpdateUnsecureItemDataCommand:
+        arguments:
+            - '@App\Repository\ItemRepository'
+            - '@App\Service\OpenSslEncryptionService'

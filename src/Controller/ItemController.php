@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Exception\ItemNotFoundException;
+use App\Service\EncryptionServiceFactory;
 use App\Service\ItemService;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,14 +20,14 @@ class ItemController extends AbstractController
      * @Route("/item", name="item_list", methods={"GET"})
      * @IsGranted("ROLE_USER")
      */
-    public function list(ItemService $itemService): JsonResponse
+    public function list(ItemService $itemService, EncryptionServiceFactory $encryptionServiceFactory): JsonResponse
     {
         $items = $itemService->findByUser($this->getUser());
 
         $allItems = [];
         foreach ($items as $item) {
             $oneItem['id'] = $item->getId();
-            $oneItem['data'] = $item->getData();
+            $oneItem['data'] = $encryptionServiceFactory->getEncrypter($item->getEncryptionServiceName())->decrypt($item->getData());
             $oneItem['created_at'] = $item->getCreatedAt();
             $oneItem['updated_at'] = $item->getUpdatedAt();
             $allItems[] = $oneItem;

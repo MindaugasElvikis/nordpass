@@ -5,6 +5,7 @@ namespace App\Tests;
 use App\Entity\Item;
 use App\Repository\ItemRepository;
 use App\Repository\UserRepository;
+use App\Service\OpenSslEncryptionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,6 +20,8 @@ class ItemControllerTest extends WebTestCase
         $userRepository = static::$container->get(UserRepository::class);
         /** @var ItemRepository $itemRepository */
         $itemRepository = static::$container->get(ItemRepository::class);
+        /** @var OpenSslEncryptionService $encrypter */
+        $encrypter = static::$container->get(OpenSslEncryptionService::class);
 
         $user = $userRepository->findOneByUsername('john');
 
@@ -34,8 +37,8 @@ class ItemControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertStringContainsString($data, $client->getResponse()->getContent());
 
-        $item = $itemRepository->findOneBy(['data' => $data]);
-        self::assertEquals($data, $item->getData());
+        $item = $itemRepository->findOneBy(['data' => $encrypter->encrypt($data)]);
+        self::assertEquals($data, $encrypter->decrypt($item->getData()));
         self::assertEquals($user->getId(), $item->getUser()->getId());
     }
 
@@ -54,7 +57,7 @@ class ItemControllerTest extends WebTestCase
 
         $client->loginUser($user);
 
-        $item = new Item($user, 'very secure new item data');
+        $item = new Item($user, 'very secure new item data', null);
         $em->persist($item);
         $em->flush();
 
@@ -79,7 +82,7 @@ class ItemControllerTest extends WebTestCase
 
         $client->loginUser($user);
 
-        $item = new Item($user, 'very secure new item data');
+        $item = new Item($user, 'very secure new item data', null);
         $em->persist($item);
         $em->flush();
 
@@ -106,7 +109,7 @@ class ItemControllerTest extends WebTestCase
 
         $client->loginUser($user);
 
-        $item = new Item($userRepository->findOneByUsername('chuck'), 'very secure new item data');
+        $item = new Item($userRepository->findOneByUsername('chuck'), 'very secure new item data', null);
         $em->persist($item);
         $em->flush();
 
@@ -128,12 +131,14 @@ class ItemControllerTest extends WebTestCase
         $userRepository = static::$container->get(UserRepository::class);
         /** @var ItemRepository $itemRepository */
         $itemRepository = static::$container->get(ItemRepository::class);
+        /** @var OpenSslEncryptionService $encrypter */
+        $encrypter = static::$container->get(OpenSslEncryptionService::class);
 
         $user = $userRepository->findOneByUsername('john');
 
         $client->loginUser($user);
 
-        $item = new Item($user, 'very secure new item data');
+        $item = new Item($user, 'very secure new item data', null);
         $em->persist($item);
         $em->flush();
 
@@ -146,7 +151,7 @@ class ItemControllerTest extends WebTestCase
         self::assertStringContainsString($newData, $client->getResponse()->getContent());
 
         $item = $itemRepository->find($itemId);
-        self::assertEquals($newData, $item->getData());
+        self::assertEquals($newData, $encrypter->decrypt($item->getData()));
     }
 
     public function testICantUpdateOtherUserItem(): void
@@ -164,7 +169,7 @@ class ItemControllerTest extends WebTestCase
 
         $client->loginUser($user);
 
-        $item = new Item($userRepository->findOneByUsername('chuck'), 'very secure new item data');
+        $item = new Item($userRepository->findOneByUsername('chuck'), 'very secure new item data', null);
         $em->persist($item);
         $em->flush();
 
