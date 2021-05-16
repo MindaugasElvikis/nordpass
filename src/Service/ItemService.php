@@ -36,6 +36,21 @@ class ItemService
     /**
      * @throws ItemNotFoundException
      */
+    public function update(User $user, int $id, string $data): void
+    {
+        $item = $this->itemRepository->findByIdAndUser($id, $user);
+
+        if (!$item) {
+            throw new ItemNotFoundException();
+        }
+
+        $item->setData($data);
+        $this->itemRepository->save($item);
+    }
+
+    /**
+     * @throws ItemNotFoundException
+     */
     public function delete(User $user, int $id): void
     {
         $item = $this->itemRepository->findByIdAndUser($id, $user);
